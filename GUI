@@ -1,0 +1,506 @@
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Comparator;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+public class Projects_4 extends JFrame {
+	public EntryManagement entryArray = new EntryManagement();
+	private JTable table;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) 
+	{
+		
+		EventQueue.invokeLater(new Runnable() {
+			
+			public void run() {
+				try {
+					Projects_4 frame = new Projects_4();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame.
+	 */
+	public Projects_4() 	{
+		
+		getContentPane().setLayout(null);
+		
+		table = new JTable();
+		table.setBounds(2, 514, 1012, -514);
+		getContentPane().add(table);
+		
+		JTextArea textArea = new JTextArea();
+		textArea.setBounds(2, 0, 1012, 513);
+		getContentPane().add(textArea);
+		
+		JTextArea entryField = new JTextArea();
+		entryField.setBounds(12, 566, 357, 31);
+		getContentPane().add(entryField);
+		
+		JButton btnNewButton = new JButton("Search");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				searchTable(entryField);
+			}
+		});
+		btnNewButton.setBounds(381, 565, 113, 32);
+		getContentPane().add(btnNewButton);
+		
+		JButton btnNewButton_1 = new JButton("Delete");
+		btnNewButton_1.setBounds(506, 565, 104, 32);
+		getContentPane().add(btnNewButton_1);
+		
+		JButton btnNewButton_2 = new JButton("Merge");
+		btnNewButton_2.setBounds(622, 565, 104, 32);
+		getContentPane().add(btnNewButton_2);
+		
+		JButton btnNewButton_3 = new JButton("Purge");
+		btnNewButton_3.setBounds(738, 565, 104, 31);
+		getContentPane().add(btnNewButton_3);
+
+	}
+
+
+private void searchTable(JTextArea entryField)
+{
+  String id = entryField.getText();
+  boolean found = false;
+  for(int row = 0; row <= table.getRowCount() - 1; row++) 
+  {
+    //System.out.println(row);
+    String strVal = null == table.getValueAt(row, 1)? null : table.getValueAt(row, 1).toString();
+    if(id.equals(strVal)) 
+    {
+        //System.out.println("found");
+        table.scrollRectToVisible(table.getCellRect(row, 1, true));
+        table.setRowSelectionInterval(row, row);
+        found = true;
+    }
+    else {
+    }
+  }
+  if(!found)
+  {
+      JOptionPane.showMessageDialog(table,"Entry does not exist or spelling is incorrect");
+  }
+    //System.out.println("Searched");
+    entryField.setText("");
+}
+
+
+
+
+public EntryManagement startUpSort(EntryManagement entryArray1, Comparator<Entry> comp) throws IOException
+{
+	
+	String fileToRead = "ProjectConformantBibFile.bib";
+	String outputFile = "ProjectContromantBibFile Final.bib";
+    int i = 0;
+            entryArray = new EntryManagement(comp);  // new array holding objects of Entry
+            try {
+                    LineReader reader = new LineReader(fileToRead); // Initializes LineReader
+                    FileWriter writer = new FileWriter(outputFile); // Initializes FileWriter
+                    while(reader.hasNext())
+                    {
+                            String line = reader.next();
+                            line = reader.next();
+                            if(!line.isEmpty() && line.charAt(0) == '@')
+                            {
+                                    Entry ex = new Entry();
+                                    Pair pair = new Pair("name",line);
+                                    ex.setType(handleLineWithAt(line));
+                                    ex.setNameRevised(handleLine(line));
+                                    ex.setName(line);
+                                    ex.add(pair);
+                                    line = reader.next();
+                                    while(!line.isEmpty() && line.charAt(0) != '}')
+                                    {
+                                            if(line.contains(" = "))
+                                            {
+                                                    String str[] = line.split(" = ");
+                                                    Pair pair2 = new Pair(str[0].trim(),str[1].trim());
+                                                    ex.add(pair2);
+                                                    ex.setFieldCount(ex.getFieldCount() + 1);
+                                                    if(str[1].length() - 1 > ex.getLongestLineLength())
+                                                    {
+                                                            ex.setLongestLineLength(str[1].length());
+                                                            ex.setLongestLine(str[0].trim());
+                                                    }
+                                                    if(str[0].contains("author")) 
+                                                    {
+                                                            ex.setAuthors(str[1]);
+                                                            String authors = removeAllCurlyBraces(str[1]).replace(',', ' ');
+                                                            String authorLine[] = str[1].split(" and ");
+                                                            ex.setAuthorCount(authorLine.length);
+                                                    }
+                                                    if(str[0].trim().contentEquals("title"))
+                                                    {
+                                                            ex.setTitle(str[1]);
+                                                            String title = removeAllCurlyBraces(str[1]).replace(',',' ').trim();
+                                                            ex.setTitleRevised(title);
+                                                            //System.out.println(title);
+                                                    }
+                                                    if(str[0].contains("year"))
+                                                    {
+                                                            String year = removeAllCurlyBraces(str[1]).replace(',', ' ').trim();
+                                                            int yearInt = Integer.parseInt(year);
+                                                            //System.out.println(yearInt);
+                                                            ex.setYear(yearInt);
+                                                    }
+                                                    if(str[0].contains("volume"))
+                                                    {
+                                                            ex.setVolume(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("pages"))
+                                                    {
+                                                            ex.setPages(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("month"))
+                                                    {
+                                                            ex.setMonth(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("doi"))
+                                                    {
+                                                            ex.setDoi(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("url = "))
+                                                    {
+                                                            ex.setUrl(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("urlDate = "))
+                                                    {
+                                                            ex.setUrlDate(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("issn"))
+                                                    {
+                                                            ex.setIssn(str[1].trim());
+                                                    }
+                                            }
+                                            
+                                            line = reader.next();
+                                    }
+                                    Pair p = new Pair("count", ex.getValues());
+                                    ex.add(p);
+                                    writer.write(ex.getName() + "\n" + ex.toString());
+                                    entryArray.add(ex);
+                                    i++;
+                            }
+                            
+                    }
+                    
+                    writer.close();
+                    //java.awt.Desktop.getDesktop().open(new File(outputFile));
+            } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+            }
+            //populateTable(entryArray.tree.getRoot());
+            System.out.println("Total entries: " + i);
+            return entryArray;
+}
+
+public void populateTable(AvlNode<Entry> node)
+{
+    try {
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
+            //System.out.println(node.element.getNameRevised());
+	if( node.element != null )
+            {
+                populateTable( node.left );
+                model.addRow(new Object[]{node.element.getType(), node.element.getNameRevised(), removeAllCurlyBraces(node.element.getTitleRevised().replace(',', ' ')), removeAllCurlyBraces(node.element.getAuthors().replace(',', ' ')), node.element.getYear() , removeAllCurlyBraces(node.element.getValues())});
+                populateTable( node.right );
+            } 
+            else 
+            {
+               
+            }
+    }catch (NullPointerException evt)
+    {
+        
+    }
+}
+static String handleLine(String line) {
+        String lineRevised = "";
+        String str[] = line.split("\\{");
+        lineRevised = str[1].replace(",","").trim();
+        return lineRevised;
+}
+static String handleLineWithAt(String line) {
+        String lineRevised = "";
+        String str[] = line.split("\\{");
+        lineRevised = str[0].replace("@","").trim();
+        return lineRevised;
+}
+
+public static String getNextLine(LineReader reader, String line)
+{
+        if(reader.next() == null)
+        {
+                return line;
+        }
+        line = reader.next();
+        return line;
+}
+
+public static int occurence(String line, char c)
+{
+        int symCount = 0;
+        for (int i = 0; i < line.length(); i++) {
+                if(line.charAt(i) == c)
+                {
+                        symCount++;
+                }
+        }
+        return symCount;
+}
+
+public static String checkLineBalance(LineReader reader,String line)
+{
+        if(reader == null)
+        {
+                return line;
+        }
+        if(line.startsWith("}"))
+        {
+                return line;
+        }
+        while(!line.endsWith("},"))
+        {
+                line = line + getNextLine(reader, line);
+        }
+        return line;
+}
+
+public static String removeAllCurlyBraces(String line) {
+
+        line = line.replace('{', ' ').replace('}', ' ');
+        if(line.contains("{") || line.contains("}"))
+        {
+                return removeAllCurlyBraces(line);
+        }
+        else {
+                return line;
+        }
+}
+
+public static void writeOrderedToFile(EntryManagement entryArray, String fileToWrite, boolean open) throws IOException 
+{
+    try {
+            File file = new File(fileToWrite);
+            FileWriter writer = new FileWriter(fileToWrite);
+            entryArray.tree.writeNodesToFile(writer);
+            if(open)
+            {
+                    java.awt.Desktop.getDesktop().open(file);
+            }
+    } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+    }
+
+}
+public EntryManagement resortTree(Comparator<Entry> comp)
+{
+        return entryArray.tree.resortList(comp);
+}
+static class TitleComparator implements Comparator<Entry>
+{
+
+        @Override
+        public int compare(Entry o1, Entry o2) {
+                // TODO Auto-generated method stub
+                return o1.getTitleRevised().compareTo(o2.getTitleRevised());
+        }
+
+}
+static class TypeComparator implements Comparator<Entry>
+{
+
+        @Override
+        public int compare(Entry o1, Entry o2) {
+                // TODO Auto-generated method stub
+                
+                return o1.getName().compareTo(o2.getName());
+        }
+
+}
+
+static class NameComparator implements Comparator<Entry>
+{
+
+        @Override
+        public int compare(Entry o1, Entry o2) {
+                // TODO Auto-generated method stub
+                return o1.getNameRevised().compareTo(o2.getNameRevised());
+        }
+
+}
+
+static class YearComparator implements Comparator<Entry>
+{
+
+        @Override
+        public int compare(Entry o1, Entry o2) {
+                // TODO Auto-generated method stub
+                if(o1.getYear() < o2.getYear())
+                {
+                        return -1;
+                }
+                return 1;
+        }
+
+}
+
+public static String mergeEntries(LineReader reader, EntryManagement entryArray) throws IOException
+{
+    String toPaste = "";
+        while(reader.hasNext())
+                    {
+                            String line = reader.next();
+                            line = reader.next();
+                            if(!line.isEmpty() && line.charAt(0) == '@')
+                            {
+                                    Entry ex = new Entry();
+                                    Pair pair = new Pair("name",line);
+                                    ex.setType(handleLineWithAt(line));
+                                    ex.setNameRevised(handleLine(line));
+                                    ex.setName(line);
+                                    ex.add(pair);
+                                    line = reader.next();
+                                    while(!line.isEmpty() && line.charAt(0) != '}')
+                                    {
+                                            if(line.contains(" = "))
+                                            {
+                                                    String str[] = line.split(" = ");
+                                                    Pair pair2 = new Pair(str[0].trim(),str[1].trim());
+                                                    ex.add(pair2);
+                                                    ex.setFieldCount(ex.getFieldCount() + 1);
+                                                    if(str[1].length() - 1 > ex.getLongestLineLength())
+                                                    {
+                                                            ex.setLongestLineLength(str[1].length());
+                                                            ex.setLongestLine(str[0].trim());
+                                                    }
+                                                    if(str[0].contains("author")) 
+                                                    {
+                                                            ex.setAuthors(str[1]);
+                                                            String authors = removeAllCurlyBraces(str[1]).replace(',', ' ');
+                                                            String authorLine[] = str[1].split(" and ");
+                                                            ex.setAuthorCount(authorLine.length);
+                                                    }
+                                                    if(str[0].trim().contentEquals("title"))
+                                                    {
+                                                            ex.setTitle(str[1]);
+                                                            String title = removeAllCurlyBraces(str[1]).replace(',',' ').trim();
+                                                            ex.setTitleRevised(title);
+                                                            //System.out.println(title);
+                                                    }
+                                                    if(str[0].contains("year"))
+                                                    {
+                                                            String year = removeAllCurlyBraces(str[1]).replace(',', ' ').trim();
+                                                            int yearInt = Integer.parseInt(year);
+                                                            //System.out.println(yearInt);
+                                                            ex.setYear(yearInt);
+                                                    }
+                                                    if(str[0].contains("volume"))
+                                                    {
+                                                            ex.setVolume(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("pages"))
+                                                    {
+                                                            ex.setPages(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("month"))
+                                                    {
+                                                            ex.setMonth(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("doi"))
+                                                    {
+                                                            ex.setDoi(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("url = "))
+                                                    {
+                                                            ex.setUrl(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("urlDate = "))
+                                                    {
+                                                            ex.setUrlDate(str[1].trim());
+                                                    }
+                                                    if(str[0].contains("issn"))
+                                                    {
+                                                            ex.setIssn(str[1].trim());
+                                                    }
+                                            }
+                                            
+                                            line = reader.next();
+                                    }
+                                    Pair p = new Pair("count", ex.getValues());
+                                    ex.add(p);
+                                    //writer.write(ex.getName() + "\n" + ex.toString());
+                                    entryArray.add(ex);
+                                    //i++;
+                            }
+        }
+        //writer4.close();
+        return toPaste;
+}
+
+public static void purgeEntries(LineReader reader, EntryManagement entryArray) throws IOException
+{
+        String line = reader.next();
+        while(reader.hasNext()) {
+                if(!line.isEmpty() && line.charAt(0) == '@')
+                {
+                        entryArray.deleteEntry(handleLine(line));
+
+                }
+                line = reader.next();
+        }
+}
+
+
+//private void searchTable(JTextField.inputIdField)
+//    {
+//      String id = inputIdField.getText();
+//      boolean found = false;
+//      for(int row = 0; row <= table.getRowCount() - 1; row++) 
+//      {
+//        //System.out.println(row);
+//        String strVal = null == table.getValueAt(row, 1)? null : table.getValueAt(row, 1).toString();
+//        if(id.equals(strVal)) 
+//        {
+//            //System.out.println("found");
+//            table.scrollRectToVisible(table.getCellRect(row, 1, true));
+//            table.setRowSelectionInterval(row, row);
+//            found = true;
+//        }
+//        else {
+//        }
+//      }
+//      if(!found)
+//      {
+//          JOptionPane.showMessageDialog(table,"Entry does not exist or spelling is incorrect");
+//      }
+//        //System.out.println("Searched");
+//        inputIdField.setText("");
+//    }
+}
+
